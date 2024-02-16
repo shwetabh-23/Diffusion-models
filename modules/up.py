@@ -1,6 +1,6 @@
 import torch 
 import torch.nn as nn
-from double_conv import double_conv
+from .double_conv import double_conv
 class up(nn.Module):
     def __init__(self, in_channels, out_channels, embed_dim = 256):
         super().__init__()

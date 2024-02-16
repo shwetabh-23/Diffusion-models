@@ -1,14 +1,14 @@
 import torch 
 import torch.nn as nn
 
-from up import up
-from down import down
-from double_conv import double_conv
-from self_attention import self_attention
+from .up import up
+from .down import down
+from .double_conv import double_conv
+from .self_attention import self_attention
 
 
 class Unet(nn.Module):
-    def __init__(self, c_in = 3, c_out = 3, time_dim = 256, device = 'cuda' if torch.cuda.is_available else 'cpu'):
+    def __init__(self, c_in = 3, c_out = 3, time_dim = 256, device = 'cuda'):
         super().__init__()
 
         self.device = device
@@ -39,9 +39,8 @@ class Unet(nn.Module):
         self.out_c = nn.Conv2d(64, c_out, kernel_size= 1)
 
     def positional_enc(self, t, channels):
-
-        inv_freq = 1.0 / (10000 ** (torch.arange(0, channels, 2, device = self.device).float() / channels))
-
+        t = t.to('cuda')
+        inv_freq = 1.0 / (10000 ** (torch.arange(0, channels, 2, device = self.device).float() / channels)).to('cuda')
         pos_enc_a = torch.sin(t.repeat(1, channels // 2) * inv_freq)
 
         pos_enc_b = torch.cos(t.repeat(1, channels // 2) * inv_freq)
@@ -69,7 +68,7 @@ class Unet(nn.Module):
         x = self.sa4(x)
         x = self.up2(x, x2, t)
         x = self.sa5(x)
-        x = self.up3( x, x1, t)
+        x = self.up3(x, x1, t)
         x = self.sa6(x)
 
         output = self.out_c(x)
