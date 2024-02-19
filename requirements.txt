@@ -5,3 +5,4 @@ torchvision
 torchaudio
 pytorch_lightning
 pillow
+tensorboard

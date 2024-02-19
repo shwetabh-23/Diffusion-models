@@ -5,17 +5,18 @@ from .up import up
 from .down import down
 from .double_conv import double_conv
 from .self_attention import self_attention
+from memory_profiler import profile
 
 
 class Unet(nn.Module):
-    def __init__(self, c_in = 3, c_out = 3, time_dim = 256, device = 'cuda'):
+    def __init__(self, c_in = 3, c_out = 3, time_dim = 256):
         super().__init__()
 
-        self.device = device
         self.time_dim = time_dim
         #breakpoint()
         self.inc = double_conv(c_in, 64)
         self.down1 = down(64, 128)
+        
         self.sa1 = self_attention(128, 32)
 
         self.down2 = down(128, 256)
@@ -40,15 +41,14 @@ class Unet(nn.Module):
 
     def positional_enc(self, t, channels):
         t = t.to('cuda')
-        inv_freq = 1.0 / (10000 ** (torch.arange(0, channels, 2, device = self.device).float() / channels)).to('cuda')
+        inv_freq = 1.0 / (10000 ** (torch.arange(0, channels, 2).float().to('cuda') / channels))
         pos_enc_a = torch.sin(t.repeat(1, channels // 2) * inv_freq)
 
         pos_enc_b = torch.cos(t.repeat(1, channels // 2) * inv_freq)
         pos_enc = torch.cat([pos_enc_a, pos_enc_b], dim= -1)
         return pos_enc
-    
-    def forward(self, x, t):
-
+   # @profile
+    def forward(self, x, t):    
         t = t.unsqueeze(-1).type(torch.float)
         t  = self.positional_enc(t, channels= self.time_dim)
 
@@ -56,7 +56,7 @@ class Unet(nn.Module):
         x2 = self.down1(x1, t)
         x2 = self.sa1(x2)
         x3 = self.down2(x2, t)
-        x3 - self.sa2(x3)
+        x3 = self.sa2(x3)
         x4 = self.down3(x3, t)
         x4 = self.sa3(x4)
 
